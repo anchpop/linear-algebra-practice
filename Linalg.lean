@@ -1,8 +1,9 @@
 import Mathlib.Algebra.Ring.Defs
 import Mathlib.Data.Real.Basic
+import Mathlib.Tactic.Linarith
 
 structure Complex :=
-(re : Real) (im : Real)
+(re : ℝ) (im : ℝ)
 
 def add (z w : Complex) : Complex :=
 ⟨z.re + w.re, z.im + w.im⟩
@@ -84,6 +85,71 @@ by
   constructor
   ring
   ring
+
+
+theorem complex_mul_com (a c : Complex) : mul a c = mul c a :=
+by
+  simp [mul]
+  constructor
+  ring
+  ring
+
+theorem complex_additive_inverse (a : Complex) : add a (neg a) = zero :=
+by
+  simp [add, neg, zero]
+
+
+noncomputable def inv (z : Complex) (_ : z ≠ zero) : Complex := ⟨z.re / (z.re^2 + z.im^2), -z.im / (z.re^2 + z.im^2)⟩
+
+open Classical
+
+theorem nonneg_add_nonneg_eq_zero_both_zero (a : ℝ) (b : ℝ) (h1: 0 ≤ a) (h2: 0 ≤ b) (h3 : a + b = 0) : a = 0 ∧ b = 0 := by
+  constructor
+  linarith
+  linarith
+
+
+theorem complex_muliplicitive_inverse (a : Complex) (h : a ≠ zero) : mul a (inv a h) = one := by
+  simp [mul, inv, one, h]
+  simp [zero] at h
+  ring
+  norm_num
+  have denom_nonzero : a.re ^ 2 + a.im ^ 2 ≠ 0 := by
+    intro probably_not
+    have h1 : 0 ≤ a.im ^ 2
+    {
+      apply sq_nonneg
+    }
+    have h2 : 0 ≤ a.re ^ 2
+    {
+      apply sq_nonneg
+    }
+    have squares_zero : a.re ^ 2 = 0 ∧ a.im ^ 2 = 0
+    {
+      apply nonneg_add_nonneg_eq_zero_both_zero (a.re ^ 2) (a.im ^ 2) h2 h1 probably_not
+    }
+    have re_zero : a.re ^ 2 = 0
+    {
+      linarith
+    }
+    -- Extract a.im ^ 2 = 0 from squares_zero
+    have im_zero : a.im ^ 2 = 0
+    {
+      linarith
+    }
+
+    rw [sq_eq_zero_iff] at re_zero
+    rw [sq_eq_zero_iff] at im_zero
+    have re_im_zero : a = { re := 0, im := 0 }
+    {
+      cases a
+      simp at re_zero
+      simp at im_zero
+      rw [re_zero, im_zero]
+    }
+    contradiction
+  rw [← Distrib.right_distrib, inv_eq_one_div, ← div_eq_mul_one_div, div_self denom_nonzero]
+
 
 instance : Ring Complex :=
 { add := add,
