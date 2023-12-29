@@ -19,89 +19,90 @@ def one : Complex := ⟨1, 0⟩
 
 def i : Complex := ⟨0, 1⟩
 
-theorem complex_add_assoc (z w u : Complex) : add (add z w) u = add z (add w u) :=
+theorem Complex.add_assoc (z w u : Complex) : add (add z w) u = add z (add w u) :=
 by
-  rw [add, add, add_assoc, add_assoc, add, add]
+  simp [add, add, add, add]
+  ring_nf
+  simp
 
-theorem complex_zero_add (z : Complex) : add zero z = z :=
-by
-  simp [add, zero]
-
-theorem complex_add_zero (z : Complex) : add z zero = z :=
+theorem Complex.zero_add (z : Complex) : add zero z = z :=
 by
   simp [add, zero]
 
-theorem complex_add_left_neg (z : Complex) : add (neg z) z = zero :=
+theorem Complex.add_zero (z : Complex) : add z zero = z :=
+by
+  simp [add, zero]
+
+theorem Complex.add_left_neg (z : Complex) : add (neg z) z = zero :=
 by
   simp [add, neg, zero]
 
-theorem complex_add_comm (z w : Complex) : add z w = add w z :=
+theorem Complex.add_comm (z w : Complex) : add z w = add w z :=
 by
   simp [add]
   constructor
-  rw [add_comm]
-  rw [add_comm]
+  ring
+  ring
 
-theorem complex_mul_assoc (z w u : Complex) : mul (mul z w) u = mul z (mul w u) :=
+theorem Complex.mul_assoc (z w u : Complex) : mul (mul z w) u = mul z (mul w u) :=
 by
   simp [mul]
   constructor
-  ring
-  ring
+  ring_nf
+  ring_nf
 
-theorem complex_mul_comm (z w : Complex) : mul z w = mul w z := -- not necessary
+theorem Complex.mul_comm (z w : Complex) : mul z w = mul w z := -- not necessary
 by
   simp [mul]
   constructor
-  ring
-  ring
+  ring_nf
+  ring_nf
 
-theorem complex_zero_mul (z : Complex) : mul zero z = zero :=
+theorem Complex.zero_mul (z : Complex) : mul zero z = zero :=
 by
   simp [mul, zero]
 
-theorem complex_mul_zero (z : Complex) : mul z zero = zero :=
+theorem Complex.mul_zero (z : Complex) : mul z zero = zero :=
 by
   simp [mul, zero]
 
-theorem complex_one_mul (z : Complex) : mul one z = z :=
+theorem Complex.one_mul (z : Complex) : mul one z = z :=
 by
   simp [mul, one]
 
-theorem complex_mul_one (z : Complex) : mul z one = z :=
+theorem Complex.mul_one (z : Complex) : mul z one = z :=
 by
   simp [mul, one]
 
-theorem complex_left_distrib (z w u : Complex) : mul z (add w u) = add (mul z w) (mul z u) :=
+theorem Complex.left_distrib (z w u : Complex) : mul z (add w u) = add (mul z w) (mul z u) :=
 by
   simp [mul, add]
   constructor
-  ring
-  ring
+  ring_nf
+  ring_nf
 
-theorem complex_right_distrib (a b c : Complex) : mul (add a b) c = add (mul a c) (mul b c) :=
+theorem Complex.right_distrib (a b c : Complex) : mul (add a b) c = add (mul a c) (mul b c) :=
 by
   simp [mul, add]
   constructor
-  ring
-  ring
+  ring_nf
+  ring_nf
 
 
-theorem complex_mul_com (a c : Complex) : mul a c = mul c a :=
+theorem Complex.mul_com (a c : Complex) : mul a c = mul c a :=
 by
   simp [mul]
   constructor
-  ring
-  ring
+  ring_nf
+  ring_nf
 
-theorem complex_additive_inverse (a : Complex) : add a (neg a) = zero :=
+theorem Complex.additive_inverse (a : Complex) : add a (neg a) = zero :=
 by
   simp [add, neg, zero]
 
-
-noncomputable def inv (z : Complex) (_ : z ≠ zero) : Complex := ⟨z.re / (z.re^2 + z.im^2), -z.im / (z.re^2 + z.im^2)⟩
-
 open Classical
+
+noncomputable def inv (z : Complex) : Complex := if z = zero then zero else ⟨z.re / (z.re^2 + z.im^2), -z.im / (z.re^2 + z.im^2)⟩
 
 theorem nonneg_add_nonneg_eq_zero_both_zero (a : ℝ) (b : ℝ) (h1: 0 ≤ a) (h2: 0 ≤ b) (h3 : a + b = 0) : a = 0 ∧ b = 0 := by
   constructor
@@ -109,10 +110,10 @@ theorem nonneg_add_nonneg_eq_zero_both_zero (a : ℝ) (b : ℝ) (h1: 0 ≤ a) (h
   linarith
 
 
-theorem complex_muliplicitive_inverse (a : Complex) (h : a ≠ zero) : mul a (inv a h) = one := by
+theorem Complex.mul_inv_cancel (a : Complex) (h : a ≠ zero) : mul a (inv a) = one := by
   simp [mul, inv, one, h]
   simp [zero] at h
-  ring
+  ring_nf
   norm_num
   have denom_nonzero : a.re ^ 2 + a.im ^ 2 ≠ 0 := by
     intro probably_not
@@ -153,25 +154,41 @@ theorem complex_muliplicitive_inverse (a : Complex) (h : a ≠ zero) : mul a (in
 
 instance : Ring Complex :=
 { add := add,
-  add_assoc := complex_add_assoc,
+  add_assoc := Complex.add_assoc,
   zero := zero,
-  zero_add := complex_zero_add,
-  add_zero := complex_add_zero,
+  zero_add := Complex.zero_add,
+  add_zero := Complex.add_zero,
   neg := neg,
-  add_left_neg := complex_add_left_neg,
-  add_comm := complex_add_comm,
+  add_left_neg := Complex.add_left_neg,
+  add_comm := Complex.add_comm,
   mul := mul,
-  mul_assoc := complex_mul_assoc,
-  zero_mul := complex_zero_mul,
-  mul_zero := complex_mul_zero,
+  mul_assoc := Complex.mul_assoc,
+  zero_mul := Complex.zero_mul,
+  mul_zero := Complex.mul_zero,
   one := one,
-  one_mul := complex_one_mul,
-  mul_one := complex_mul_one,
-  left_distrib := complex_left_distrib,
-  right_distrib := complex_right_distrib,
+  one_mul := Complex.one_mul,
+  mul_one := Complex.mul_one,
+  left_distrib := Complex.left_distrib,
+  right_distrib := Complex.right_distrib,
 }
 
+theorem Complex.exists_pair_ne : ∃ (x y : Complex), x ≠ y := by
+  exists zero
+  exists one
+  rw [zero, one]
+  intro h
+  injection h with h_re _
+  apply zero_ne_one at h_re
+  exact h_re
 
-example : mul i i = ⟨-1, 0⟩ :=
-by
-  simp [mul, i]
+theorem Complex.inv_zero : inv zero = zero := by
+  simp [inv, zero]
+
+noncomputable instance : Field Complex :=
+{
+  inv := inv,
+  exists_pair_ne := Complex.exists_pair_ne,
+  mul_inv_cancel := Complex.mul_inv_cancel,
+  inv_zero := Complex.inv_zero,
+  mul_comm := Complex.mul_comm,
+}
