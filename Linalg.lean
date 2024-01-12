@@ -2,6 +2,7 @@ import Mathlib.Algebra.Ring.Defs
 import Mathlib.Data.Real.Basic
 import Mathlib.Data.Vector.Basic
 import Mathlib.Tactic.Linarith
+import Mathlib.Tactic.ApplyFun
 
 structure Complex :=
 (re : ℝ) (im : ℝ)
@@ -119,7 +120,6 @@ theorem nonneg_add_nonneg_eq_zero_both_zero (a : ℝ) (b : ℝ) (h1: 0 ≤ a) (h
   linarith
   linarith
 
-
 theorem Complex.mul_inv_cancel (a : ℂ) (h : a ≠ zero) : complex_mul a (inv a) = one := by
   simp [complex_mul, inv, one, h]
   simp [zero] at h
@@ -161,12 +161,141 @@ theorem Complex.mul_inv_cancel (a : ℂ) (h : a ≠ zero) : complex_mul a (inv a
     contradiction
   rw [← Distrib.right_distrib, inv_eq_one_div, ← div_eq_mul_one_div, div_self denom_nonzero]
 
-theorem Complex.mul_inv_unique (a b : ℂ) (a_ne_zero : a ≠ zero) (b_ne_zero : b ≠ zero) (h : complex_mul a b = one) : b = inv a := by
+theorem sq_add_sq_eq_zero_ {a b : ℝ} : a ^ 2 + b ^ 2 = 0 -> a = 0 ∧ b = 0 := by
+  intro h
+  have h1 : 0 ≤ a ^ 2
+  {
+    apply sq_nonneg
+  }
+  have h2 : 0 ≤ b ^ 2
+  {
+    apply sq_nonneg
+  }
+  have h3 : a ^ 2 = 0 ∧ b ^ 2 = 0
+  {
+    apply nonneg_add_nonneg_eq_zero_both_zero (a ^ 2) (b ^ 2) h1 h2 h
+  }
+  have h4 : a ^ 2 = 0
+  {
+    linarith
+  }
+  have h5 : b ^ 2 = 0
+  {
+    linarith
+  }
+  rw [sq_eq_zero_iff] at h4
+  rw [sq_eq_zero_iff] at h5
+  constructor
+  {
+    exact h4
+  }
+  {
+    exact h5
+  }
+
+theorem nonpos_sub_nonneg_eq_zero_both_zero (a : ℝ) (b : ℝ) (h1: a ≤ 0) (h2: 0 ≤ b) (h3 : a - b = 0) : a = 0 ∧ b = 0 := by
+  constructor
+  linarith
+  linarith
+
+theorem neg_sq_add_sq_eq_zero_ {a b : ℝ} (h: -a ^ 2 - b ^ 2 = 0) : a = 0 ∧ b = 0 := by
+  have h1 : -a ^ 2 ≤ 0
+  {
+    have hh : 0 ≤ a ^ 2 := sq_nonneg a
+    linarith
+  }
+  have h2 : 0 ≤ b ^ 2
+  {
+    apply sq_nonneg
+  }
+  have h3 : -a ^ 2 = 0 ∧ b ^ 2 = 0
+  {
+    apply nonpos_sub_nonneg_eq_zero_both_zero (-a ^ 2) (b ^ 2) h1 h2 h
+  }
+  cases h3 with
+  | intro a_sq b_sq =>
+  constructor
+  {
+    apply_fun (fun x => -x) at a_sq
+    simp at a_sq
+    exact a_sq
+  }
+  {
+    simp at b_sq
+    exact b_sq
+  }
+
+theorem Complex_mul_inv_unique (a b : ℂ) (a_ne_zero : a ≠ zero) (b_ne_zero : b ≠ zero) (h : complex_mul a b = one) : b = inv a := by
+  rcases b with ⟨c, d⟩
+  rcases a with ⟨a, b⟩
   simp [complex_mul, one] at h
+  simp [inv, a_ne_zero]
   cases h with
   | intro re_eq_one im_eq_zero =>
-  simp [inv, a_ne_zero]
-  sorry
+  have h4 : d = -b/(a^2+b^2) := by
+    have h1 : a * b * c - b^2 * d=b := by
+      apply (congrArg (fun x => (x * b))) at re_eq_one
+      ring_nf at re_eq_one
+      rw [mul_assoc, mul_comm c b, ← mul_assoc ] at re_eq_one
+      exact re_eq_one
+    have h2 : a^2*d+a*b*c=0 := by
+      apply (congrArg (fun x => (x * a))) at im_eq_zero
+      ring_nf at im_eq_zero
+      rw [add_comm]
+      exact im_eq_zero
+    have aaah1 (a b c : ℝ) (h2: a ^ 2 * d + a * b * c - (a * b * c - b ^ 2 * d) = 0 - (a * b * c - b ^ 2 * d)) : a ^ 2 * d + b ^ 2 * d = b ^ 2 * d - a * b * c := by
+      rw [add_sub_assoc (a ^ 2 * d) (a * b * c) (a * b * c - b ^ 2 * d), ← sub_add, sub_self, zero_add, zero_sub, neg_sub] at h2
+      exact h2
+    have h3 : -a^2 * d - b^2 * d = b := by
+      apply (congrArg (fun x => x - (a * b * c - b ^ 2 * d))) at h2
+      apply aaah1 at h2
+      rw [← neg_sub, neg_mul, sub_eq_add_neg, neg_neg, add_comm, h2, neg_sub, h1]
+
+    apply_fun (· / (-a ^ 2 - b ^ 2)) at h3
+    rw [← sub_mul, mul_comm, ← mul_div, div_self, mul_one, ← neg_sub, div_neg, sub_eq_add_neg, neg_neg, neg_div', add_comm] at h3
+    {
+      rw [← h3]
+    }
+    {
+      rw [zero] at a_ne_zero
+      intro a_eq_zero
+      have hmmmm := neg_sq_add_sq_eq_zero_ a_eq_zero
+      cases hmmmm with
+      | intro a_zero b_zero =>
+      rw [a_zero, b_zero] at a_ne_zero
+      contradiction
+    }
+  constructor
+  {
+    apply_fun (· * a) at re_eq_one
+    apply_fun (· * b) at im_eq_zero
+    rw [sub_mul, one_mul] at re_eq_one
+    rw [add_mul, zero_mul] at im_eq_zero
+    rw [← add_zero (a * c * a - b * d * a), ← im_eq_zero, ← add_assoc, mul_assoc b d a, mul_comm d a, ← mul_assoc b a d, mul_comm b a, sub_eq_add_neg, add_assoc (a * c * a), mul_assoc a b d, mul_comm b d, ←  mul_assoc a d b, neg_add_self (a * d * b), add_zero, mul_comm a c, mul_comm b c, mul_assoc, mul_assoc, ← mul_add, ← pow_two, ← pow_two] at re_eq_one
+    apply_fun (· / (a ^ 2 + b ^ 2)) at re_eq_one
+    rw [mul_div_assoc c (a ^ 2 + b ^ 2) (a ^ 2 + b ^ 2), div_self, mul_one] at re_eq_one
+    {
+      exact re_eq_one
+    }
+    {
+      rw [zero] at a_ne_zero
+      intro a_eq_zero
+      have hmmmm := sq_add_sq_eq_zero_ a_eq_zero
+      cases hmmmm with
+      | intro a_zero b_zero =>
+      rw [a_zero, b_zero] at a_ne_zero
+      contradiction
+    }
+  }
+  {
+    exact h4
+  }
+
+example (h3: -a * d = 0) : False := by
+    apply (congrArg (fun x => x / 1)) at h3
+    have := 1
+    simp at h3
+    sorry
 
 instance : Ring Complex :=
 { add := complex_add,
@@ -309,4 +438,3 @@ theorem MyVector_scale_assoc {α : Type u} {n : ℕ} [Field α] (a b : α) (v : 
     funext x
     ring
   simp only [h]
-
